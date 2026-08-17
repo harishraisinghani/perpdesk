@@ -1,0 +1,12 @@
+harvested addrs: 40
+0xab17480ae932268e81d89316f7a4d820eb87e403 n= 1 rep=    118.6280 comp=    118.6280 relerr=0.00e+00 OK
+0xe43517bcc1fd7184b027556f0f5f22611a42fde4 n= 1 rep=   4001.6364 comp=   4001.6364 relerr=1.25e-10 OK
+0xa62b923a112d50d03e1e096bbd53422490dac104 n= 2 rep=    660.3569 comp=    660.3569 relerr=1.21e-09 OK
+0xdc8047a4afdc2725efdd1cca2144330b13a3d8bf n= 2 rep=  11061.2166 comp=  11061.2166 relerr=4.52e-11 OK
+0x91cfcb3bda040f234b4a64a45698bdebe9734865 n= 3 rep=    126.0072 comp=    126.0072 relerr=1.37e-08 OK
+0x3ad341309fac76a002370deeb3238ef217aeb465 n= 3 rep=   1277.9052 comp=   1277.9052 relerr=1.15e-09 OK
+0xbb160cb61e694570f9d570f9fcde7c61dd2143ad n= 1 rep=    180.9916 comp=    180.9916 relerr=6.91e-10 OK
+0xd6608f4027ee90db6dc45d0b4b8e2fb0a49c1f61 n= 1 rep=     34.3416 comp=     34.3416 relerr=2.18e-08 OK
+0x4e614a1dc65a06d55203e55ac33b295a068d4684 n= 1 rep=      0.0079 comp=      0.0079 relerr=3.75e-07 OK
+0xba5f4f92f396e6de20d3dae5eefa65f4ecca806a n= 1 rep=   1021.3905 comp=   1021.3905 relerr=3.92e-10 OK
+checked: 10

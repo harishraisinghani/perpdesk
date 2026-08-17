@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Hyperliquid liquidation risk across tracked wallets." />
+    <title>PerpDesk — Liquidation risk</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260816-6" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <a class="brand" href="/" aria-label="PerpDesk home">
+          <span class="brand-mark"><i></i><i></i><i></i></span>
+          <span>PerpDesk</span>
+        </a>
+        <nav aria-label="Primary">
+          <button class="nav-item active" data-view="risk"><span class="nav-icon">⌁</span><span>Risk map</span></button>
+          <button class="nav-item" data-view="accounts"><span class="nav-icon">◎</span><span>Accounts</span></button>
+          <button class="nav-item" data-view="quality"><span class="nav-icon">✓</span><span>Model quality</span></button>
+        </nav>
+        <div class="rail-foot">
+          <div class="system-dot"><span></span> Collector healthy</div>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Hyperliquid perps</p>
+            <h1>Liquidation risk map</h1>
+          </div>
+          <div class="top-actions">
+            <div class="as-of"><span>Position state</span><strong id="as-of">Loading…</strong></div>
+            <button class="icon-button" id="refresh" title="Refresh" aria-label="Refresh data">↻</button>
+            <button class="promote-button" id="open-promote"><span>＋</span> Track account</button>
+          </div>
+        </header>
+
+        <section class="content">
+          <section class="view active" id="view-risk">
+            <div class="market-strip">
+              <div class="coin-select-wrap">
+                <label for="coin-select">Asset</label>
+                <select id="coin-select"></select>
+              </div>
+              <div class="market-price"><span id="coin-name">BTC</span><strong id="mark-price">—</strong><small>LIVE MARK</small></div>
+              <div class="divider"></div>
+              <div class="market-kpi"><span>Tracked notional</span><strong id="tracked-notional">—</strong></div>
+              <div class="market-kpi"><span>Tracked wallets</span><strong id="tracked-accounts">—</strong></div>
+              <div class="market-kpi"><span>Live share</span><strong id="live-share">—</strong></div>
+            </div>
+
+            <article class="panel price-panel">
+              <div class="panel-head price-panel-head">
+                <div>
+                  <h2><span id="price-chart-coin">BTC</span> asset price</h2>
+                  <p class="panel-subtitle" id="price-ohlc">Loading open, high, low, and close…</p>
+                </div>
+                <div class="price-chart-actions">
+                  <strong id="price-change">—</strong>
+                  <div class="range-switch" aria-label="Price chart range">
+                    <button type="button" class="active" data-candle-range="1D">1D</button>
+                    <button type="button" data-candle-range="7D">7D</button>
+                    <button type="button" data-candle-range="30D">30D</button>
+                  </div>
+                </div>
+              </div>
+              <div id="price-chart" class="price-chart" role="img" aria-label="Interactive candlestick price chart"></div>
+              <div class="price-chart-foot">
+                <span id="price-chart-status">Loading Hyperliquid candles…</span>
+                <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">Charting by TradingView</a>
+              </div>
+            </article>
+
+            <div class="stat-grid">
+              <article class="stat-card hot">
+                <div class="stat-label"><span>5% downside</span></div>
+                <strong id="risk-five">—</strong>
+                <div class="stat-sub"><span id="risk-five-accounts">— accounts</span><span id="risk-five-share">— tracked</span></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><span>Open interest coverage</span><button class="info-button" type="button" aria-label="About open-interest coverage: Tracked notional divided by public market open interest. This is coverage, not estimated market-wide liquidations." data-tooltip="Tracked notional divided by public market open interest.">i</button></div>
+                <strong id="coverage">—</strong>
+                <div class="progress"><span id="coverage-bar"></span></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><span>Largest cliff</span></div>
+                <strong id="largest-cliff">—</strong>
+                <div class="stat-sub"><span id="largest-cliff-level">—</span><span id="largest-cliff-accounts">—</span></div>
+              </article>
+              <article class="stat-card">
+                <div class="stat-label"><span>5% upside</span></div>
+                <strong id="risk-five-up">—</strong>
+                <div class="stat-sub"><span id="risk-five-up-accounts">— accounts</span><span id="risk-five-up-share">— tracked</span></div>
+              </article>
+            </div>
+
+            <article class="panel scanner-panel">
+              <div class="panel-head">
+                <div>
+                  <div class="heading-with-info">
+                    <h2>Market risk scanner</h2>
+                    <button class="info-button" type="button" aria-label="About the market risk scanner: Ranks the top ten markets by the larger share of tracked notional liquidatable after a five percent move down or up." data-tooltip="Ranks symmetric 5% liquidation exposure across the top 10 markets.">i</button>
+                  </div>
+                  <p class="panel-subtitle">Compare forced-liquidation exposure across the top 10 markets.</p>
+                </div>
+                <div class="scanner-cadence">5-second refresh</div>
+              </div>
+              <div class="table-scroll scanner-scroll">
+                <table class="scanner-table">
+                  <thead>
+                    <tr><th>Asset / spot</th><th>Action</th><th>1D spot trend</th><th>Risk skew</th><th>−5%: longs at risk</th><th>+5%: shorts at risk</th><th>OI coverage</th><th>Funding / hr</th></tr>
+                  </thead>
+                  <tbody id="market-risk-rows"></tbody>
+                </table>
+              </div>
+              <p class="scanner-note">Rule: LONG when a ≥0.5% one-day uptrend confirms short-squeeze skew; SHORT when a ≤−0.5% downtrend confirms downside-cascade skew; otherwise WAIT. This is a screening signal, not personalized financial advice.</p>
+            </article>
+
+            <div class="primary-grid">
+              <article class="panel risk-panel">
+                <div class="panel-head">
+                  <h2>Risk by price move</h2>
+                  <div class="legend"><span></span> tracked cross notional</div>
+                </div>
+                <div class="chart-wrap"><svg id="risk-chart" role="img" aria-label="Liquidatable notional by price shock"></svg></div>
+                <div class="chart-foot"><span>Current mark</span><span>Price shock →</span></div>
+              </article>
+
+              <article class="panel cliff-panel">
+                <div class="panel-head">
+                  <h2>Liquidation cliffs</h2>
+                </div>
+                <div id="cliff-list" class="cliff-list"></div>
+              </article>
+            </div>
+
+            <article class="panel history-panel">
+              <div class="panel-head">
+                <div>
+                  <div class="heading-with-info">
+                    <h2>5% downside exposure over time</h2>
+                    <button class="info-button" type="button" aria-label="About downside exposure history: Shows how much tracked long notional would be liquidatable after a five percent price drop at each snapshot. Changes can also reflect wallet refreshes and are not price forecasts." data-tooltip="Shows whether downside exposure is building or fading. Wallet refreshes can also move the series.">i</button>
+                  </div>
+                  <p class="panel-subtitle">Tracked long notional that would be liquidatable after a 5% price drop.</p>
+                </div>
+                <div class="history-summary" aria-label="History summary">
+                  <div><span>Latest</span><strong id="history-latest">—</strong></div>
+                  <div><span>Since first</span><strong id="history-change">—</strong></div>
+                  <div><span>Snapshots</span><strong id="history-snapshots">—</strong></div>
+                </div>
+              </div>
+              <svg id="history-chart" role="img" aria-label="Tracked long notional liquidatable after a five percent price drop over time"></svg>
+              <div class="history-foot"><span>15-minute snapshots</span><span>Time →</span></div>
+            </article>
+          </section>
+
+          <section class="view" id="view-accounts">
+            <article class="panel table-panel">
+              <div class="panel-head">
+                <h2>Wallet liquidation prices</h2>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>Account</th><th>Side</th><th>Notional</th><th>Joint liq. price</th><th>Distance</th><th>Other legs</th><th>Freshness</th></tr></thead>
+                  <tbody id="account-rows"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="view" id="view-quality">
+            <div class="quality-grid">
+              <article class="proof-card success"><span class="proof-icon">✓</span><div><p>Maintenance-margin reconciliation</p><strong>10 / 10 passed</strong><small>Worst relative error 3.75e−7 · threshold 1e−6</small></div></article>
+              <article class="proof-card success"><span class="proof-icon">✓</span><div><p>Closed-form agreement oracle</p><strong>Grid classification matched</strong><small>Tested across directions and tier boundaries</small></div></article>
+              <article class="proof-card"><span class="proof-icon neutral">≈</span><div><p>Account-value reconstruction</p><strong>Within mark-drift tolerance</strong><small>totalRawUsd + Σ signed position value</small></div></article>
+            </div>
+            <div class="quality-columns">
+              <article class="panel method-card">
+                <h2>Joint liquidation</h2>
+                <p>The exchange’s position liquidation price holds every other mark fixed. PerpDesk solves the shared cross-margin account under the shock, including maintenance drag from every other leg.</p>
+                <div class="formula"><span>AV(s)</span><b>−</b><span>MM(s)</span><b>=</b><span>0</span></div>
+                <p class="formula-note">Piecewise linear inside each published margin tier; solved exactly in O(positions).</p>
+              </article>
+              <article class="panel limitations-card">
+                <div class="heading-with-info"><h2>Model limits</h2><button class="info-button" type="button" aria-label="About model limits: Boundaries that prevent tracked-wallet results from being interpreted as market-wide forecasts." data-tooltip="What these tracked-wallet estimates do not represent.">i</button></div>
+                <ul id="limitations"></ul>
+              </article>
+              <article class="panel alerts-card">
+                <div class="panel-head"><h2>Alerts</h2></div>
+                <div id="alerts-list"></div>
+              </article>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="promote-dialog">
+      <form method="dialog" id="promote-form">
+        <button class="dialog-close" id="close-dialog" type="button" aria-label="Close">×</button>
+        <h2>Track a wallet</h2>
+        <p>Add a public Hyperliquid wallet to the tracked set.</p>
+        <label for="address">Account address</label>
+        <input id="address" name="address" placeholder="0x…" autocomplete="off" required pattern="0x[0-9a-fA-F]{40}" />
+        <div class="dialog-message" id="dialog-message"></div>
+        <button class="promote-button full" type="submit">Add to live tier</button>
+      </form>
+    </dialog>
+    <div class="toast" id="toast"></div>
+    <script src="https://unpkg.com/lightweight-charts@5.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
+    <script src="/static/app.js?v=20260816-6" defer></script>
+  </body>
+</html>

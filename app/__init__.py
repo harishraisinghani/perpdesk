@@ -1,0 +1,2 @@
+"""Standalone PerpDesk web application."""
+

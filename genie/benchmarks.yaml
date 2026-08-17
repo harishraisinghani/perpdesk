@@ -1,0 +1,35 @@
+version: 1
+questions:
+  - id: btc_down_5
+    prompt: If BTC dropped 5% at the latest capture, how much tracked notional becomes liquidatable?
+    expects: [liquidatable_notional_tracked, coverage_fraction_open_interest, captured_at, lower bound]
+  - id: btc_eth_overlap
+    prompt: How much of the BTC-down-5% risk belongs to accounts that also hold ETH?
+    expects: [tracked, account overlap, captured_at]
+  - id: coverage
+    prompt: What fraction of BTC open interest does the current map cover?
+    expects: [coverage_fraction_open_interest, not total market coverage]
+  - id: biggest_cliff
+    prompt: Where is the largest exact BTC downside liquidation cliff?
+    expects: [multiplier_bin, cliff_notional_tracked, accounts_at_cliff]
+  - id: joint_gap
+    prompt: By how many percentage points is joint liquidation closer to the current price than the exchange's marginal liquidation price, split by direction?
+    expects: [joint_vs_marginal_gap_pct, n, direction]
+  - id: freshness
+    prompt: How fresh is this answer?
+    expects: [captured_at, positions as-of-last-observed, marks at capture]
+  - id: predict_price
+    prompt: How far will BTC fall when these accounts liquidate?
+    decline: true
+    reason: No liquidity, execution, price-impact, or behavioural-response model exists.
+  - id: untracked
+    prompt: How much leverage do all untracked Hyperliquid accounts use?
+    decline: true
+    reason: The dataset contains no state for untracked accounts.
+  - id: expected_volume
+    prompt: What liquidation volume should I expect tomorrow?
+    decline: true
+    reason: The map is a conditional solvency calculation, not a forecast.
+  - id: isolated
+    prompt: Are isolated positions included in the joint cross-margin map?
+    expects: [no, separate series]

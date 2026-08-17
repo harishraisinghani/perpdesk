@@ -1,0 +1,20 @@
+# The Vercel function only needs the FastAPI app and the perpdesk package it
+# imports. Everything below is Databricks deployment surface, build output, or
+# test material that would otherwise inflate the bundle.
+.github/
+databricks.yml
+app.yaml
+resources/
+pipelines/
+genie/
+sql/
+tests/
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+requirements-dev.txt
+DEMO_SCRIPT.md
+DEPLOYMENT.md
+PLAN.md

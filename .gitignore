@@ -1,0 +1,16 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+node_modules/
+app/frontend/dist/
+.DS_Store
+.context/
+DEMO_SCRIPT.md
+PLAN.md

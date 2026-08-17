@@ -1,0 +1,56 @@
+resources:
+  apps:
+    perpdesk_app:
+      name: perpdesk
+      description: Live Hyperliquid liquidation-risk dashboard
+      source_code_path: ..
+      resources:
+        - name: postgres
+          description: PerpDesk Lakebase production database
+          postgres:
+            branch: projects/perpdesk/branches/production
+            database: projects/perpdesk/branches/production/databases/databricks-postgres
+            permission: CAN_CONNECT_AND_CREATE
+      permissions:
+        - level: CAN_USE
+          group_name: users
+
+  pipelines:
+    perpdesk:
+      name: perpdesk-risk-map
+      catalog: workspace
+      target: perpdesk
+      serverless: true
+      libraries:
+        - file:
+            path: ../pipelines/risk_map.py
+      environment:
+        dependencies:
+          - --editable ${workspace.file_path}
+      configuration:
+        perpdesk.source_catalog: ${var.source_catalog}
+
+  jobs:
+    perpdesk_refresh:
+      name: perpdesk-refresh-and-append
+      max_concurrent_runs: 1
+      schedule:
+        quartz_cron_expression: "0 0/15 * * * ?"
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      tasks:
+        - task_key: refresh_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.perpdesk.id}
+        - task_key: append_history
+          depends_on:
+            - task_key: refresh_pipeline
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../sql/05_append_history.sql
+        - task_key: sync_history_to_lakebase
+          depends_on:
+            - task_key: append_history
+          pipeline_task:
+            pipeline_id: ${var.history_sync_pipeline_id}

@@ -1,0 +1,83 @@
+name: Deploy PerpDesk to Databricks
+
+on:
+  workflow_dispatch:
+    inputs:
+      adopt_existing_resources:
+        description: Adopt the existing pipeline and history job on the first production deployment
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: perpdesk-production
+  cancel-in-progress: false
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+      BUNDLE_VAR_deployer_service_principal: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install and test
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pytest -q
+          python -m compileall -q app perpdesk pipelines
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Adopt existing production resources
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.adopt_existing_resources }}
+        run: |
+          databricks bundle deployment bind perpdesk \
+            7fcf02b5-0f41-4006-a683-221ba48017b0 \
+            --target prod --auto-approve
+          databricks bundle deployment bind perpdesk_refresh \
+            982917030467061 \
+            --target prod --auto-approve
+
+      - name: Validate bundle
+        run: databricks bundle validate --target prod
+
+      - name: Deploy bundle resources
+        run: databricks bundle deploy --target prod
+
+      - name: Start or restart app
+        run: databricks bundle run perpdesk_app --target prod
+
+      - name: Wait for app health
+        run: |
+          for attempt in $(seq 1 20); do
+            state=$(databricks apps get perpdesk --output json | jq -r '.app_status.state')
+            echo "Attempt ${attempt}/20: ${state}"
+            if [ "${state}" = "RUNNING" ]; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "PerpDesk did not reach RUNNING within five minutes" >&2
+          exit 1

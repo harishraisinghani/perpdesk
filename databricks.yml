@@ -1,0 +1,35 @@
+bundle:
+  name: perpdesk
+
+include:
+  - resources/*.yml
+
+artifacts:
+  default:
+    type: whl
+    build: python3 -m pip wheel --no-deps --wheel-dir dist .
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://dbc-306f45a0-f996.cloud.databricks.com
+    variables:
+      deployer_service_principal: unused-in-dev
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-306f45a0-f996.cloud.databricks.com
+      root_path: /Workspace/Users/${var.deployer_service_principal}/.bundle/${bundle.name}/${bundle.target}
+
+variables:
+  deployer_service_principal:
+    description: Application ID of the production CI/CD service principal
+  source_catalog:
+    default: perpdesk_pg.public
+  warehouse_id:
+    default: 441728dc4037e341
+  history_sync_pipeline_id:
+    description: Managed pipeline backing the Lakebase history synced table
+    default: 34e02180-22bb-48e1-ba63-af62c450ec17
