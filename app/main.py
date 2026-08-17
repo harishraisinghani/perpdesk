@@ -11,7 +11,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -84,9 +84,40 @@ def index() -> FileResponse:
     return FileResponse(BASE / "static" / "index.html")
 
 
+REQUIRED_SETTINGS = (
+    "PERPDESK_DEMO_MODE",
+    "ENDPOINT_NAME",
+    "PGHOST",
+    "PGUSER",
+    "PGDATABASE",
+    "PGPORT",
+    "DATABRICKS_HOST",
+    "DATABRICKS_CLIENT_ID",
+    "DATABRICKS_CLIENT_SECRET",
+)
+
+
 @app.get("/health")
-def health() -> dict:
-    return {"status": "ok", "mode": repository().mode, "read_only": read_only()}
+def health() -> JSONResponse:
+    """Report why the app is unhealthy rather than raising. A misconfigured
+    serverless deployment otherwise returns a blind 500 that can only be
+    diagnosed with platform log access."""
+    try:
+        body = {"status": "ok", "mode": repository().mode, "read_only": read_only()}
+        return JSONResponse(body)
+    except Exception as exc:
+        # Names and presence only. Never echo values: this endpoint is public.
+        return JSONResponse(
+            {
+                "status": "unconfigured",
+                "error": type(exc).__name__,
+                "detail": str(exc),
+                "settings_present": {
+                    name: bool(os.getenv(name, "").strip()) for name in REQUIRED_SETTINGS
+                },
+            },
+            status_code=503,
+        )
 
 
 @app.get("/api/dashboard")

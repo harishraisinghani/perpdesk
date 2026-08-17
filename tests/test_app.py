@@ -201,6 +201,60 @@ def test_serverless_defaults_to_read_only_without_being_asked(monkeypatch) -> No
     assert client().get("/health").json()["read_only"] is True
 
 
+def test_health_reports_missing_settings_instead_of_crashing(monkeypatch) -> None:
+    """A blind 500 on a serverless host cannot be diagnosed without log access,
+    so misconfiguration has to be legible from the response itself."""
+    import app.main as main
+    import perpdesk.collector.config as config
+
+    # The deployment has no .env; the local one must not mask the failure.
+    monkeypatch.setattr(config, "load_dotenv", lambda *a, **k: None)
+    monkeypatch.setattr(main, "load_dotenv", lambda *a, **k: None)
+    monkeypatch.setenv("PERPDESK_DEMO_MODE", "false")
+    monkeypatch.setenv("PGHOST", "host.example")
+    monkeypatch.setenv("PGUSER", "user")
+    monkeypatch.delenv("ENDPOINT_NAME", raising=False)
+    repository.cache_clear()
+
+    response = TestClient(app).get("/health")
+    body = response.json()
+
+    assert response.status_code == 503
+    assert body["status"] == "unconfigured"
+    assert "ENDPOINT_NAME" in body["detail"]
+    assert body["settings_present"]["ENDPOINT_NAME"] is False
+    assert body["settings_present"]["PGHOST"] is True
+    # Presence only. Leaking values would publish credentials on a public site.
+    assert "host.example" not in response.text
+
+
+def test_settings_trim_pasted_whitespace() -> None:
+    from perpdesk.collector.config import Settings
+
+    os.environ["ENDPOINT_NAME"] = "  projects/p/branches/b/endpoints/e\n"
+    os.environ["PGHOST"] = " host.example "
+    try:
+        settings = Settings.from_env()
+    finally:
+        os.environ.pop("ENDPOINT_NAME", None)
+        os.environ.pop("PGHOST", None)
+
+    assert settings.endpoint_name == "projects/p/branches/b/endpoints/e"
+    assert settings.pg_host == "host.example"
+
+
+def test_whitespace_only_setting_counts_as_missing() -> None:
+    from perpdesk.collector.config import Settings
+
+    os.environ.update({"ENDPOINT_NAME": "   ", "PGHOST": "h", "PGUSER": "u"})
+    try:
+        with pytest.raises(RuntimeError, match="ENDPOINT_NAME"):
+            Settings.from_env().validate_database()
+    finally:
+        for name in ("ENDPOINT_NAME", "PGHOST", "PGUSER"):
+            os.environ.pop(name, None)
+
+
 def test_serverless_pool_profile_is_small_and_liveness_checked() -> None:
     assert _pool_profile() == {}
 

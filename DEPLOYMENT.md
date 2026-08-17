@@ -106,10 +106,34 @@ Lakebase project. Grant only those production resources rather than making it an
 Create a GitHub Actions federation policy for:
 
 ```text
-repo:harishraisinghani/conductor-playground:environment:prod
+repo:harishraisinghani/perpdesk:environment:prod
 ```
 
-Use the GitHub OIDC issuer `https://token.actions.githubusercontent.com`. Follow the official
+Use the GitHub OIDC issuer `https://token.actions.githubusercontent.com`. The subject must name the
+repository that actually runs the workflow, so it tracks this repository rather than the playground
+this code started in.
+
+The audience matters and the generic guide will mislead you here. Because `DATABRICKS_HOST` is a
+workspace URL, the SDK never populates an account ID and requests the workspace token endpoint as the
+audience instead of the account ID that the documentation suggests:
+
+```bash
+databricks account service-principal-federation-policy create 75935068606757 \
+  --policy-id github-prod \
+  --json '{
+    "oidc_policy": {
+      "issuer": "https://token.actions.githubusercontent.com",
+      "subject": "repo:harishraisinghani/perpdesk:environment:prod",
+      "audiences": [
+        "https://dbc-306f45a0-f996.cloud.databricks.com/oidc/v1/token",
+        "c239f14a-2872-403d-960e-7a0af5b22838"
+      ]
+    }
+  }'
+```
+
+This is an account-level API, so authenticate the CLI against `https://accounts.cloud.databricks.com`
+as an account admin first. Follow the official
 [GitHub Actions federation guide](https://docs.databricks.com/aws/en/dev-tools/auth/provider-github).
 
 ### 2. Configure the GitHub production environment

@@ -29,14 +29,21 @@ class Settings:
     @classmethod
     def from_env(cls) -> "Settings":
         load_dotenv()
+
+        def text(name: str, default: str = "") -> str:
+            # Values pasted into a hosting dashboard routinely carry a trailing
+            # newline or space. Untrimmed they read as "set" but produce a
+            # malformed connection string or resource path much later.
+            return os.getenv(name, default).strip() or default
+
         return cls(
-            info_url=os.getenv("HL_INFO_URL", "https://api.hyperliquid.xyz/info"),
-            ws_url=os.getenv("HL_WS_URL", "wss://api.hyperliquid.xyz/ws"),
-            endpoint_name=os.getenv("ENDPOINT_NAME", ""),
-            pg_host=os.getenv("PGHOST", ""),
-            pg_database=os.getenv("PGDATABASE", "databricks_postgres"),
-            pg_user=os.getenv("PGUSER", ""),
-            pg_port=int(os.getenv("PGPORT", "5432")),
+            info_url=text("HL_INFO_URL", "https://api.hyperliquid.xyz/info"),
+            ws_url=text("HL_WS_URL", "wss://api.hyperliquid.xyz/ws"),
+            endpoint_name=text("ENDPOINT_NAME"),
+            pg_host=text("PGHOST"),
+            pg_database=text("PGDATABASE", "databricks_postgres"),
+            pg_user=text("PGUSER"),
+            pg_port=int(text("PGPORT", "5432")),
             tracked_wallets=int(os.getenv("PERPDESK_TRACKED_WALLETS", "1000")),
             t0_size=int(os.getenv("PERPDESK_T0_SIZE", "10")),
             t1_size=int(os.getenv("PERPDESK_T1_SIZE", "990")),
